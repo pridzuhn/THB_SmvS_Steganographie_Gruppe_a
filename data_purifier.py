@@ -280,6 +280,83 @@ if __name__ == "__main__":
 
     print(ns_digits_lst)
 
+    # Digits Totals/ Percentage
+    # No Stego
+    count_digits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    total = 0
+    for row in ns_digits_lst:
+        for group in row:
+            for value in group:
+                total += 1
+                if value == 0:
+                    count_digits[0] += 1
+                if value == 1:
+                    count_digits[1] += 1
+                if value == 2:
+                    count_digits[2] += 1
+                if value == 3:
+                    count_digits[3] += 1
+                if value == 4:
+                    count_digits[4] += 1
+                if value == 5:
+                    count_digits[5] += 1
+                if value == 6:
+                    count_digits[6] += 1
+                if value == 7:
+                    count_digits[7] += 1
+                if value == 8:
+                    count_digits[8] += 1
+                if value == 9:
+                    count_digits[9] += 1
+            # print(count_digits)
+
+    print('\nNo Steganographie')
+    print('\nTotal Values: ')
+    for i in range(0, len(count_digits)):
+        print(str(i) + ': ' + str(count_digits[i]))
+
+    print('\nPercentage: ')
+    for i in range(0, len(count_digits)):
+        print(str(i) + ': ' + str((count_digits[i] / total) * 100))
+
+    # Stego
+    count_digits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    total = 0
+    for row in s_digits_lst:
+        for group in row:
+            for value in group:
+                total += 1
+                if value == 0:
+                    count_digits[0] += 1
+                if value == 1:
+                    count_digits[1] += 1
+                if value == 2:
+                    count_digits[2] += 1
+                if value == 3:
+                    count_digits[3] += 1
+                if value == 4:
+                    count_digits[4] += 1
+                if value == 5:
+                    count_digits[5] += 1
+                if value == 6:
+                    count_digits[6] += 1
+                if value == 7:
+                    count_digits[7] += 1
+                if value == 8:
+                    count_digits[8] += 1
+                if value == 9:
+                    count_digits[9] += 1
+            # print(count_digits)
+
+    print('\nSteganographie')
+    print('\nTotal Values: ')
+    for i in range(0, len(count_digits)):
+        print(str(i) + ': ' + str(count_digits[i]))
+
+    print('\nPercentage: ')
+    for i in range(0, len(count_digits)):
+        print(str(i) + ': ' + str((count_digits[i] / total) * 100))
+
     step_size = 20
 
     no_s_group_avg = []
