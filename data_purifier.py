@@ -79,7 +79,6 @@ def extract_sliced_clean_data(filename):
     Output: clean Data - list of all microsecond values"""
     return get_sliced_clean_data(__extract_data(filename), 3, 6)
 
-
 def get_digit_list(input_data):
     data = []
     for i in range(0, int(len(input_data)), 20):
@@ -125,63 +124,85 @@ def get_digit_list(input_data):
     return output
 
 
-if __name__ == "__main__":
-    no_stego_raw_data = __extract_data('NoStego.csv')
-    stego_raw_data = __extract_data('Stego_high.csv')
+def rolling_detect(data, window_size):
+    """Input: sliced data - list of all entries sliced to [start:end), size of window
+        function iteraties through given data"""
+    count_digits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    total = 0
 
-    # data usable for analyisis contains only relevant digits
-    no_stego_data = get_sliced_clean_data(no_stego_raw_data, 3, 6)
-    stego_data = get_sliced_clean_data(stego_raw_data, 3, 6)
+    fA = False
 
-    standard_data = []
+    s_live_list_digits = []
 
-    for i in range(0, 100):
-        standard_data.append(0)
-        standard_data.append(1)
-        standard_data.append(2)
-        standard_data.append(3)
-        standard_data.append(4)
-        standard_data.append(5)
-        standard_data.append(6)
-        standard_data.append(7)
-        standard_data.append(8)
-        standard_data.append(9)
+    for row in data:
+        for value in row:
+            s_live_list_digits.append(value)
 
-    print(no_stego_data)
-    print(stego_data)
+    print(s_live_list_digits)
 
-    no_stego_1_digit = []
-    no_stego_2_digit = []
-    no_stego_3_digit = []
+    for value in s_live_list_digits:
+        value = int(value)
+        if value == 0:
+            count_digits[0] += 1
+        if value == 1:
+            count_digits[1] += 1
+        if value == 2:
+            count_digits[2] += 1
+        if value == 3:
+            count_digits[3] += 1
+        if value == 4:
+            count_digits[4] += 1
+        if value == 5:
+            count_digits[5] += 1
+        if value == 6:
+            count_digits[6] += 1
+        if value == 7:
+            count_digits[7] += 1
+        if value == 8:
+            count_digits[8] += 1
+        if value == 9:
+            count_digits[9] += 1
 
-    stego_1_digit = []
-    stego_2_digit = []
-    stego_3_digit = []
+        # reduce attempts, cutoff low amounts of Data to reduce false positives
+        if int(value) % int(window_size) == 0 and total > 50:
 
-    for value in no_stego_data:
-        no_stego_1_digit.append(value[0])
-        no_stego_2_digit.append(value[1])
-        no_stego_3_digit.append(value[2])
+            removed_outlier_first_grade = []
 
-    for value in stego_data:
-        stego_1_digit.append(value[0])
-        stego_2_digit.append(value[1])
-        stego_3_digit.append(value[2])
+            data_std = statistics.stdev(count_digits)
+            data_mean = statistics.mean(count_digits)
 
-    no_stego_1_digit = [int(i) for i in no_stego_1_digit]
-    no_stego_2_digit = [int(i) for i in no_stego_2_digit]
-    no_stego_3_digit = [int(i) for i in no_stego_3_digit]
-    stego_1_digit = [int(i) for i in stego_1_digit]
-    stego_2_digit = [int(i) for i in stego_2_digit]
-    stego_3_digit = [int(i) for i in stego_3_digit]
+            # clean std and mean of simple outliers because of small samplesize
+            for outlier in count_digits:
+                if outlier > data_mean + data_std:
+                    pass
+                else:
+                    removed_outlier_first_grade.append(outlier)
 
-    no_s_avg_digit_1 = statistics.mean(no_stego_1_digit)
-    no_s_avg_digit_2 = statistics.mean(no_stego_2_digit)
-    no_s_avg_digit_3 = statistics.mean(no_stego_3_digit)
-    s_avg_digit_1 = statistics.mean(stego_1_digit)
-    s_avg_digit_2 = statistics.mean(stego_2_digit)
-    s_avg_digit_3 = statistics.mean(stego_3_digit)
+            clean_data_std = statistics.stdev(removed_outlier_first_grade)
+            clean_data_mean = statistics.mean(removed_outlier_first_grade)
 
+            # there is an anomaly with 0, so i had to increase it ti 7 usually should work with 3*
+            cutoff = clean_data_std * 7
+            upper_limit = clean_data_mean + cutoff
+            lower_limit = clean_data_mean - cutoff
+
+            for outlier in count_digits:
+                if outlier > upper_limit or outlier < lower_limit:
+                    fA = True
+                    print("\nAnomaly detected")
+                    print(outlier)
+                    print(count_digits)
+                    print("Limits:")
+                    print(upper_limit)
+                    print(lower_limit)
+                    print("std: " + str(clean_data_std))
+                    print("mean: " + str(clean_data_mean))
+
+        total += 1
+    return fA
+
+
+def extra_info_overall(stego_data, no_stego_data):
     no_stego_numbers = [int(i) for i in no_stego_data]
     stego_numbers = [int(i) for i in stego_data]
 
@@ -215,12 +236,6 @@ if __name__ == "__main__":
         for group in digit:
             avg_per_group.append(statistics.mean(group))
         avg_digits_per_group_s.append(avg_per_group)
-
-    print('\nStandard Values:')
-    print('standart deviation: ' + str(statistics.stdev(standard_data)))
-    print('mean: ' + str(statistics.mean(standard_data)))
-    print('median: ' + str(statistics.median(standard_data)))
-    print('variance: ' + str(statistics.variance(standard_data)))
 
     print('\nStandard Deviation in Digits:')
 
@@ -278,7 +293,58 @@ if __name__ == "__main__":
         i += 1
         print('Digit ' + str(i) + ': ' + str(statistics.variance(row)))
 
-    print(ns_digits_lst)
+
+if __name__ == "__main__":
+    no_stego_raw_data = __extract_data('NoStego.csv')
+    stego_raw_data = __extract_data('Stego_high.csv')
+
+    # data usable for analyisis contains only relevant digits
+    # data with 66 rows
+    # no_stego_data = __slice_data(__clean_micro_seconds(no_stego_raw_data), 0, 6)
+    # stego_data = __slice_data(__clean_micro_seconds(stego_raw_data), 3, 6)
+
+    # data with all positions
+    # no_stego_data = __clean_micro_seconds(__filter_responses(no_stego_raw_data))
+    # stego_data = __clean_micro_seconds(__filter_responses(stego_raw_data))
+
+    # data without 66 rows
+    no_stego_data = get_sliced_clean_data(no_stego_raw_data, 3, 6)
+    stego_data = get_sliced_clean_data(stego_raw_data, 3, 6)
+
+    no_stego_1_digit = []
+    no_stego_2_digit = []
+    no_stego_3_digit = []
+
+    stego_1_digit = []
+    stego_2_digit = []
+    stego_3_digit = []
+
+    for value in no_stego_data:
+        no_stego_1_digit.append(value[0])
+        no_stego_2_digit.append(value[1])
+        no_stego_3_digit.append(value[2])
+
+    for value in stego_data:
+        stego_1_digit.append(value[0])
+        stego_2_digit.append(value[1])
+        stego_3_digit.append(value[2])
+
+    no_stego_1_digit = [int(i) for i in no_stego_1_digit]
+    no_stego_2_digit = [int(i) for i in no_stego_2_digit]
+    no_stego_3_digit = [int(i) for i in no_stego_3_digit]
+    stego_1_digit = [int(i) for i in stego_1_digit]
+    stego_2_digit = [int(i) for i in stego_2_digit]
+    stego_3_digit = [int(i) for i in stego_3_digit]
+
+    no_s_avg_digit_1 = statistics.mean(no_stego_1_digit)
+    no_s_avg_digit_2 = statistics.mean(no_stego_2_digit)
+    no_s_avg_digit_3 = statistics.mean(no_stego_3_digit)
+    s_avg_digit_1 = statistics.mean(stego_1_digit)
+    s_avg_digit_2 = statistics.mean(stego_2_digit)
+    s_avg_digit_3 = statistics.mean(stego_3_digit)
+
+    s_digits_lst = get_digit_list(stego_data)
+    ns_digits_lst = get_digit_list(no_stego_data)
 
     # Digits Totals/ Percentage
     # No Stego
@@ -359,26 +425,91 @@ if __name__ == "__main__":
 
     step_size = 20
 
-    no_s_group_avg = []
-    for i in range(0, len(no_stego_data), step_size):
-        group = []
-        for j in range(0, step_size):
-            try:
-                group.append(no_stego_numbers[i + j])
-            except:
-                break
-        no_s_group_avg.append(statistics.mean(group))
+    print('\nDetect Anomaly in No Steganographie Data:')
+    anomaly_found = rolling_detect(no_stego_data, 20)
+    if anomaly_found:
+        print("Anomaly Found in No Stego")
+    else:
+        print("No Anomaly Found in No Stego")
 
-    s_group_avg = []
-    for i in range(0, len(no_stego_data), step_size):
-        group = []
-        for j in range(0, step_size):
-            try:
-                group.append(stego_numbers[i + j])
-            except:
-                break
-        s_group_avg.append(statistics.mean(group))
+    print('\nDetect Anomaly in Steganographie Data:')
+    anomaly_found = rolling_detect(stego_data, 20)
+    if anomaly_found:
+        print("Anomaly Found in Stego")
+    else:
+        print("No Anomaly Found in Stego")
 
-    # print('\nDurchschnitt nach Gruppen\n')
-    # for i in range(0, len(no_s_group_avg) - 1):
-    #     print('Gruppe: ' + str(i) + ' ns: ' + str(no_s_group_avg[i]) + ', s: ' + str(s_group_avg[i]))
+
+class LiveDetector:
+    count_digits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    total = 0
+
+    def check_anomaly(self):
+        """Checks for all given Data if an anomaly was found
+        :return False No Anomaly
+        :return True Anomaly found
+        print details to cmd"""
+        removed_outlier_first_grade = []
+        found_Anomaly = False
+
+        data_std = statistics.stdev(self.count_digits)
+        data_mean = statistics.mean(self.count_digits)
+
+        # clean std and mean of simple outliers because of small samplesize
+        for outlier in self.count_digits:
+            if outlier > data_mean + data_std:
+                pass
+            else:
+                removed_outlier_first_grade.append(outlier)
+
+        clean_data_std = statistics.stdev(removed_outlier_first_grade)
+        clean_data_mean = statistics.mean(removed_outlier_first_grade)
+
+        # there is an anomaly with 0, so i had to increase it ti 7 usually should work with 3*
+        cutoff = clean_data_std * 7
+        upper_limit = clean_data_mean + cutoff
+        lower_limit = clean_data_mean - cutoff
+
+        for outlier in self.count_digits:
+            if outlier > upper_limit or outlier < lower_limit:
+                found_Anomaly = True
+                print("\nAnomaly detected")
+                print(outlier)
+                print(count_digits)
+                print("Limits:")
+                print(upper_limit)
+                print(lower_limit)
+                print("std: " + str(clean_data_std))
+                print("mean: " + str(clean_data_mean))
+
+        return found_Anomaly
+
+    def add_data(self, clean_sliced_data):
+        s_live_list_digits = []
+
+        for __row in clean_sliced_data:
+            for __value in row:
+                s_live_list_digits.append(__value)
+
+        for __value in s_live_list_digits:
+            __value = int(__value)
+            if value == 0:
+                self.count_digits[0] += 1
+            if value == 1:
+                self.count_digits[1] += 1
+            if value == 2:
+                self.count_digits[2] += 1
+            if value == 3:
+                self.count_digits[3] += 1
+            if value == 4:
+                self.count_digits[4] += 1
+            if value == 5:
+                self.count_digits[5] += 1
+            if value == 6:
+                self.count_digits[6] += 1
+            if value == 7:
+                self.count_digits[7] += 1
+            if value == 8:
+                self.count_digits[8] += 1
+            if value == 9:
+                self.count_digits[9] += 1
