@@ -359,13 +359,13 @@ def performance_test(stego_data, no_stego_data):
     # "ProzentFalseNegatives": (s_total_wind - s_pos) / s_total_wind,
 
     print('\n\nPerformance:')
-    print('\nStego_high:')
+    print('\nFile "Stego_high":')
     print('Tests overall: ' + str(performance["total_windows"]))
     print('True Positives: ' + str(performance["TruePos"]))
     print('False Negatives: ' + str(performance["FalseNegatives"]))
     print('Prozentual True Positives: ' + str(performance["ProzentTruePos"]*100) + " %")
     print('Prozentual False Negatives: ' + str(performance["ProzentFalseNegatives"]*100) + " %")
-    print('\nNoStego:')
+    print('\nFile "NoStego":')
     print('Tests overall: ' + str(performance["total_windows"]))
     print('False Positives: ' + str(performance["FalsePos"]))
     print('True Negatives: ' + str(performance["TrueNegatives"]))
