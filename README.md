@@ -1,4 +1,4 @@
-# THB_SmvS_Steganographie_Gruppe_b
+# THB_SmvS_Steganographie_Gruppe_a
 
 This project may be used to get data from CSV-files provided for the exercise.
 In data_purifier.py you may write your own code below main to analyse the data.
