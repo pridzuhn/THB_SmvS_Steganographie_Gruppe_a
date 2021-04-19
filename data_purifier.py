@@ -5,7 +5,8 @@
 
 import csv
 import statistics
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 def __extract_data(filename):
     """Input: filename - name of CSV file from which to extract data
@@ -315,10 +316,10 @@ def calc_performance(result_no_stego, result_stego):
         "FalsePos": ns_pos,
         "TrueNegatives": ns_total_wind - ns_pos,
         "FalseNegatives": s_total_wind - s_pos,
-        "ProzentTruePos": s_pos / s_total_wind,
-        "ProzentFalsePos": ns_pos / ns_total_wind,
-        "ProzentTrueNegatives": (ns_total_wind - ns_pos) / ns_total_wind,
-        "ProzentFalseNegatives": (s_total_wind - s_pos) / s_total_wind,
+        "ProzentTruePos": s_pos / s_total_wind * 100,
+        "ProzentFalsePos": ns_pos / ns_total_wind * 100,
+        "ProzentTrueNegatives": (ns_total_wind - ns_pos) / ns_total_wind * 100,
+        "ProzentFalseNegatives": (s_total_wind - s_pos) / s_total_wind * 100,
     }
 
 
@@ -363,14 +364,52 @@ def performance_test(stego_data, no_stego_data):
     print('Tests overall: ' + str(performance["total_windows"]))
     print('True Positives: ' + str(performance["TruePos"]))
     print('False Negatives: ' + str(performance["FalseNegatives"]))
-    print('Prozentual True Positives: ' + str(performance["ProzentTruePos"]*100) + " %")
-    print('Prozentual False Negatives: ' + str(performance["ProzentFalseNegatives"]*100) + " %")
+    print('Prozentual True Positives: ' + str(performance["ProzentTruePos"]) + " %")
+    print('Prozentual False Negatives: ' + str(performance["ProzentFalseNegatives"]) + " %")
     print('\nFile "NoStego":')
     print('Tests overall: ' + str(performance["total_windows"]))
     print('False Positives: ' + str(performance["FalsePos"]))
     print('True Negatives: ' + str(performance["TrueNegatives"]))
-    print('Prozentual False Positives: ' + str(performance["ProzentFalsePos"]*100) + " %")
-    print('Prozentual True Negatives: ' + str(performance["ProzentTrueNegatives"]*100) + " %")
+    print('Prozentual False Positives: ' + str(performance["ProzentFalsePos"]) + " %")
+    print('Prozentual True Negatives: ' + str(performance["ProzentTrueNegatives"]) + " %")
+
+
+def performance_test_multi(stego_data, no_stego_data, cutoff, ws, values):
+    window_size = ws
+    cutoff_mult = cutoff
+    result_no_stego = test_detection(no_stego_data, window_size, cutoff_mult)
+    result_stego = test_detection(stego_data, window_size, cutoff_mult)
+    performance = calc_performance(result_no_stego, result_stego)
+    values.append((performance["ProzentFalseNegatives"], performance["ProzentFalsePos"]))
+    return values
+
+
+def plot_by_cutoff(stego_data, no_stego_data, max_cutoff, ws):
+    values = []
+    for i in range(0, max_cutoff+1):
+        performance_test_multi(stego_data, no_stego_data, i, ws, values)
+    for tupel in values:
+        print(tupel)
+    plt.plot(values)
+    plt.legend(('False neg.', 'False pos.'), loc='center', shadow=True)
+    plt.xlabel('Cutoff')
+    plt.ylabel('Percent')
+    plt.title('Window Size = ' + str(ws))
+    plt.show()
+
+
+def plot_by_window(stego_data, no_stego_data, cutoff, max_ws):
+    values = []
+    for i in range(10, max_ws, 20):
+        performance_test_multi(stego_data, no_stego_data, cutoff, i, values)
+    for tupel in values:
+        print(tupel)
+    plt.plot(values)
+    plt.legend(('True pos.', 'False neg.', 'False pos.', 'True neg.'), loc='center', shadow=True)
+    plt.xlabel('Window Size')
+    plt.ylabel('Percent')
+    plt.title('Cutoff = ' + str(cutoff))
+    plt.show()
 
 
 def check_distribution(stego_data, no_stego_data):
@@ -527,7 +566,13 @@ if __name__ == "__main__":
     no_stego_data = get_sliced_clean_data(no_stego_raw_data, 3, 6)
     stego_data = get_sliced_clean_data(stego_raw_data, 3, 6)
 
-    performance_test(stego_data, no_stego_data)
+    #ws = 20
+    #max_cutoff = 10
+    #plot_by_cutoff(stego_data, no_stego_data, max_cutoff, ws)
+
+    ws = 10
+    max_cutoff = 10
+    plot_by_cutoff(stego_data, no_stego_data, max_cutoff, ws)
 
     # print('\nDetect Anomaly in No Steganographie Data:')
     # anomaly_found = rolling_detect(no_stego_data, 20)
